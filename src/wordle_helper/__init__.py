@@ -23,7 +23,13 @@ class Word(Base):
     fifth_letter = Column(String(1))
 
     def to_string(self):
-        return f"{self.first_letter}{self.second_letter}{self.third_letter}{self.fourth_letter}{self.fifth_letter}"
+        return "{}{}{}{}{}".format(
+            self.first_letter,
+            self.second_letter,
+            self.third_letter,
+            self.fourth_letter,
+            self.fifth_letter,
+        )
 
 
 def create_words_from_dict_file(dict_file_path="/usr/share/dict/words"):
@@ -42,7 +48,7 @@ def create_words_from_dict_file(dict_file_path="/usr/share/dict/words"):
         )
 
 
-def load_database(engine):
+def load_database_with_words(engine):
     with Session(engine) as session:
         words = create_words_from_dict_file()
         session.add_all(words)
@@ -53,17 +59,10 @@ engine = create_engine(SQLITE_DB_URL, echo=False, future=True)
 Base.metadata.create_all(engine)
 
 if not SQLITE_DB_EXISTS:
-    load_database(engine)
+    load_database_with_words(engine)
 
 
-@click.command()
-@click.option("--first_letter", "-1", type=str)
-@click.option("--second_letter", "-2", type=str)
-@click.option("--third_letter", "-3", type=str)
-@click.option("--fourth_letter", "-4", type=str)
-@click.option("--fifth_letter", "-5", type=str)
-@click.option("--unused_letters", "-u", type=str)
-def cli(
+def query_database_for_words(
     first_letter,
     second_letter,
     third_letter,
@@ -95,4 +94,30 @@ def cli(
                 )
 
         for word in query:
-            click.echo(word.to_string())
+            yield word.to_string()
+
+
+@click.command()
+@click.option("--first_letter", "-1", type=str)
+@click.option("--second_letter", "-2", type=str)
+@click.option("--third_letter", "-3", type=str)
+@click.option("--fourth_letter", "-4", type=str)
+@click.option("--fifth_letter", "-5", type=str)
+@click.option("--unused_letters", "-u", type=str)
+def cli(
+    first_letter,
+    second_letter,
+    third_letter,
+    fourth_letter,
+    fifth_letter,
+    unused_letters,
+):
+    for word in query_database_for_words(
+        first_letter=first_letter,
+        second_letter=second_letter,
+        third_letter=third_letter,
+        fourth_letter=fourth_letter,
+        fifth_letter=fifth_letter,
+        unused_letters=unused_letters,
+    ):
+        click.echo(word)
