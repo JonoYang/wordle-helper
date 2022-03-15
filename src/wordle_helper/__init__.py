@@ -55,13 +55,24 @@ if not SQLITE_DB_EXISTS:
     load_database_with_words(engine)
 
 
+# TODO: Come up with a better name for this function
+def filter_letters_not_used_in_correct_position(query, letter_column, letters):
+    for letter in letters:
+        query = query.filter(letter_column != letter)
+    return query
+
+
 def query_database_for_words(
     first_letter,
     second_letter,
     third_letter,
     fourth_letter,
     fifth_letter,
-    included_letters,
+    not_first_letter,
+    not_second_letter,
+    not_third_letter,
+    not_fourth_letter,
+    not_fifth_letter,
     unused_letters,
 ):
     with Session(engine) as session:
@@ -69,17 +80,64 @@ def query_database_for_words(
 
         if first_letter:
             query = query.filter(Word.first_letter == first_letter)
+        elif not_first_letter:
+            query = filter_letters_not_used_in_correct_position(
+                query=query,
+                letter_column=Word.first_letter,
+                letters=not_first_letter,
+            )
+
         if second_letter:
             query = query.filter(Word.second_letter == second_letter)
+        elif not_second_letter:
+            query = filter_letters_not_used_in_correct_position(
+                query=query,
+                letter_column=Word.second_letter,
+                letters=not_second_letter,
+            )
+
         if third_letter:
             query = query.filter(Word.third_letter == third_letter)
+        elif not_third_letter:
+            query = filter_letters_not_used_in_correct_position(
+                query=query,
+                letter_column=Word.third_letter,
+                letters=not_third_letter,
+            )
+
         if fourth_letter:
             query = query.filter(Word.fourth_letter == fourth_letter)
+        elif not_fourth_letter:
+            query = filter_letters_not_used_in_correct_position(
+                query=query,
+                letter_column=Word.fourth_letter,
+                letters=not_fourth_letter,
+            )
+
         if fifth_letter:
             query = query.filter(Word.fifth_letter == fifth_letter)
+        elif not_fifth_letter:
+            query = filter_letters_not_used_in_correct_position(
+                query=query,
+                letter_column=Word.fifth_letter,
+                letters=not_fifth_letter,
+            )
+
+        included_letters = "".join(
+            letters
+            for letters in [
+                not_first_letter,
+                not_second_letter,
+                not_third_letter,
+                not_fourth_letter,
+                not_fifth_letter,
+            ]
+            if letters
+        )
         if included_letters:
             for included_letter in included_letters:
                 query = query.filter(Word.word.contains(included_letter))
+
         if unused_letters:
             for unused_letter in unused_letters:
                 query = query.filter(~Word.word.contains(unused_letter))
@@ -94,7 +152,11 @@ def query_database_for_words(
 @click.option("--third_letter", "-3", type=str)
 @click.option("--fourth_letter", "-4", type=str)
 @click.option("--fifth_letter", "-5", type=str)
-@click.option("--included_letters", "-i", type=str)
+@click.option("--not_first_letter", "-n1", type=str)
+@click.option("--not_second_letter", "-n2", type=str)
+@click.option("--not_third_letter", "-n3", type=str)
+@click.option("--not_fourth_letter", "-n4", type=str)
+@click.option("--not_fifth_letter", "-n5", type=str)
 @click.option("--unused_letters", "-u", type=str)
 def cli(
     first_letter,
@@ -102,7 +164,11 @@ def cli(
     third_letter,
     fourth_letter,
     fifth_letter,
-    included_letters,
+    not_first_letter,
+    not_second_letter,
+    not_third_letter,
+    not_fourth_letter,
+    not_fifth_letter,
     unused_letters,
 ):
     for word in query_database_for_words(
@@ -111,7 +177,11 @@ def cli(
         third_letter=third_letter,
         fourth_letter=fourth_letter,
         fifth_letter=fifth_letter,
-        included_letters=included_letters,
+        not_first_letter=not_first_letter,
+        not_second_letter=not_second_letter,
+        not_third_letter=not_third_letter,
+        not_fourth_letter=not_fourth_letter,
+        not_fifth_letter=not_fifth_letter,
         unused_letters=unused_letters,
     ):
         click.echo(word)
