@@ -22,7 +22,7 @@ class Word(Base):
     fourth_letter = Column(String(1))
     fifth_letter = Column(String(1))
 
-    def word(self):
+    def to_string(self):
         return f"{self.first_letter}{self.second_letter}{self.third_letter}{self.fourth_letter}{self.fifth_letter}"
 
 
@@ -95,4 +95,4 @@ def cli(
                 )
 
         for word in query:
-            print(word.word())
+            click.echo(word.to_string())
