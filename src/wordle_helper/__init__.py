@@ -16,20 +16,12 @@ Base = declarative_base()
 class Word(Base):
     __tablename__ = "words"
     id = Column(Integer, primary_key=True)
+    word = Column(String(5))
     first_letter = Column(String(1))
     second_letter = Column(String(1))
     third_letter = Column(String(1))
     fourth_letter = Column(String(1))
     fifth_letter = Column(String(1))
-
-    def to_string(self):
-        return "{}{}{}{}{}".format(
-            self.first_letter,
-            self.second_letter,
-            self.third_letter,
-            self.fourth_letter,
-            self.fifth_letter,
-        )
 
 
 def create_words_from_dict_file(dict_file_path="/usr/share/dict/words"):
@@ -40,6 +32,7 @@ def create_words_from_dict_file(dict_file_path="/usr/share/dict/words"):
             continue
         word = word.lower()
         yield Word(
+            word=word,
             first_letter=word[0],
             second_letter=word[1],
             third_letter=word[2],
@@ -68,6 +61,7 @@ def query_database_for_words(
     third_letter,
     fourth_letter,
     fifth_letter,
+    included_letters,
     unused_letters,
 ):
     with Session(engine) as session:
@@ -83,18 +77,15 @@ def query_database_for_words(
             query = query.filter(Word.fourth_letter == fourth_letter)
         if fifth_letter:
             query = query.filter(Word.fifth_letter == fifth_letter)
+        if included_letters:
+            for included_letter in included_letters:
+                query = query.filter(Word.word.contains(included_letter))
         if unused_letters:
             for unused_letter in unused_letters:
-                query = (
-                    query.filter(Word.first_letter != unused_letter)
-                    .filter(Word.second_letter != unused_letter)
-                    .filter(Word.third_letter != unused_letter)
-                    .filter(Word.fourth_letter != unused_letter)
-                    .filter(Word.fifth_letter != unused_letter)
-                )
+                query = query.filter(~Word.word.contains(unused_letter))
 
         for word in query:
-            yield word.to_string()
+            yield word.word
 
 
 @click.command()
@@ -103,6 +94,7 @@ def query_database_for_words(
 @click.option("--third_letter", "-3", type=str)
 @click.option("--fourth_letter", "-4", type=str)
 @click.option("--fifth_letter", "-5", type=str)
+@click.option("--included_letters", "-i", type=str)
 @click.option("--unused_letters", "-u", type=str)
 def cli(
     first_letter,
@@ -110,6 +102,7 @@ def cli(
     third_letter,
     fourth_letter,
     fifth_letter,
+    included_letters,
     unused_letters,
 ):
     for word in query_database_for_words(
@@ -118,6 +111,7 @@ def cli(
         third_letter=third_letter,
         fourth_letter=fourth_letter,
         fifth_letter=fifth_letter,
+        included_letters=included_letters,
         unused_letters=unused_letters,
     ):
         click.echo(word)
