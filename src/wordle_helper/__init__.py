@@ -1,4 +1,5 @@
 import click
+import string
 import os
 from sqlalchemy import create_engine
 from sqlalchemy import Column
@@ -33,7 +34,10 @@ def create_words_from_dict_file(dict_file_path="/usr/share/dict/words"):
     with open(dict_file_path, "r") as f:
         words = f.read().splitlines()
     for word in words:
-        if len(word) != 5:
+        if (
+            len(word) != 5
+            or any(c for c in word if c in string.punctuation)
+        ):
             continue
         word = word.lower()
         yield Word(
