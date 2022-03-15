@@ -1,13 +1,9 @@
-import click
-import string
 import os
-from sqlalchemy import create_engine
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import Session
+from string import punctuation
 
+import click
+from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy.orm import Session, declarative_base
 
 SQLITE_DB_FILE_PATH = os.path.abspath(os.path.expanduser("~/words.sqlite"))
 SQLITE_DB_URL = f"sqlite:///{SQLITE_DB_FILE_PATH}"
@@ -34,10 +30,7 @@ def create_words_from_dict_file(dict_file_path="/usr/share/dict/words"):
     with open(dict_file_path, "r") as f:
         words = f.read().splitlines()
     for word in words:
-        if (
-            len(word) != 5
-            or any(c for c in word if c in string.punctuation)
-        ):
+        if len(word) != 5 or any(c for c in word if c in punctuation):
             continue
         word = word.lower()
         yield Word(
