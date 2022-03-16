@@ -5,11 +5,18 @@ import click
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.orm import Session, declarative_base
 
-SQLITE_DB_FILE_PATH = os.path.abspath(os.path.expanduser("~/words.sqlite"))
-SQLITE_DB_URL = f"sqlite:///{SQLITE_DB_FILE_PATH}"
-SQLITE_DB_EXISTS = os.path.exists(SQLITE_DB_FILE_PATH)
-current_parent = os.path.dirname(os.path.abspath(__file__))
-WORD_SOURCE = os.path.join(current_parent, "data/sgb-words.txt")
+WORD_DB_PATH = os.path.abspath(
+    os.path.expanduser("~/.cache/wordle_helper/words.sqlite")
+)
+WORD_DB_PARENT_DIR = os.path.dirname(WORD_DB_PATH)
+
+if not os.path.exists(WORD_DB_PARENT_DIR):
+    os.makedirs(WORD_DB_PARENT_DIR)
+
+WORD_DB_URL = f"sqlite:///{WORD_DB_PATH}"
+WORD_DB_EXISTS = os.path.exists(WORD_DB_PATH)
+CURRENT_PARENT_DIR = os.path.dirname(os.path.abspath(__file__))
+WORD_SOURCE_PATH = os.path.join(CURRENT_PARENT_DIR, "data/sgb-words.txt")
 
 Base = declarative_base()
 
@@ -25,8 +32,8 @@ class Word(Base):
     fifth_letter = Column(String(1))
 
 
-def create_words_from_dict_file(dict_file_path=WORD_SOURCE):
-    with open(dict_file_path, "r") as f:
+def create_words_from_file(word_source_path=WORD_SOURCE_PATH):
+    with open(word_source_path, "r") as f:
         words = f.read().splitlines()
     for word in words:
         if len(word) != 5 or any(c for c in word if c in punctuation):
@@ -42,17 +49,17 @@ def create_words_from_dict_file(dict_file_path=WORD_SOURCE):
         )
 
 
-def load_database_with_words(engine, dict_file_path=WORD_SOURCE):
+def load_database_with_words(engine, word_source_path=WORD_SOURCE_PATH):
     with Session(engine) as session:
-        words = create_words_from_dict_file(dict_file_path=dict_file_path)
+        words = create_words_from_file(word_source_path=word_source_path)
         session.add_all(words)
         session.commit()
 
 
-engine = create_engine(SQLITE_DB_URL, echo=False, future=True)
+engine = create_engine(WORD_DB_URL, echo=False, future=True)
 Base.metadata.create_all(engine)
 
-if not SQLITE_DB_EXISTS:
+if not WORD_DB_EXISTS:
     load_database_with_words(engine)
 
 
