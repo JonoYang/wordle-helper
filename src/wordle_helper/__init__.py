@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session, declarative_base
 SQLITE_DB_FILE_PATH = os.path.abspath(os.path.expanduser("~/words.sqlite"))
 SQLITE_DB_URL = f"sqlite:///{SQLITE_DB_FILE_PATH}"
 SQLITE_DB_EXISTS = os.path.exists(SQLITE_DB_FILE_PATH)
-
+current_parent = os.path.dirname(os.path.abspath(__file__))
+WORD_SOURCE = os.path.join(current_parent, "data/sgb-words.txt")
 
 Base = declarative_base()
 
@@ -24,7 +25,7 @@ class Word(Base):
     fifth_letter = Column(String(1))
 
 
-def create_words_from_dict_file(dict_file_path="/usr/share/dict/words"):
+def create_words_from_dict_file(dict_file_path=WORD_SOURCE):
     with open(dict_file_path, "r") as f:
         words = f.read().splitlines()
     for word in words:
@@ -41,9 +42,9 @@ def create_words_from_dict_file(dict_file_path="/usr/share/dict/words"):
         )
 
 
-def load_database_with_words(engine):
+def load_database_with_words(engine, dict_file_path=WORD_SOURCE):
     with Session(engine) as session:
-        words = create_words_from_dict_file()
+        words = create_words_from_dict_file(dict_file_path=dict_file_path)
         session.add_all(words)
         session.commit()
 
