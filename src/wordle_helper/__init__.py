@@ -9,12 +9,7 @@ WORD_DB_PATH = os.path.abspath(
     os.path.expanduser("~/.cache/wordle_helper/words.sqlite")
 )
 WORD_DB_PARENT_DIR = os.path.dirname(WORD_DB_PATH)
-
-if not os.path.exists(WORD_DB_PARENT_DIR):
-    os.makedirs(WORD_DB_PARENT_DIR)
-
 WORD_DB_URL = f"sqlite:///{WORD_DB_PATH}"
-WORD_DB_EXISTS = os.path.exists(WORD_DB_PATH)
 CURRENT_PARENT_DIR = os.path.dirname(os.path.abspath(__file__))
 WORD_SOURCE_PATH = os.path.join(CURRENT_PARENT_DIR, "data/sgb-words.txt")
 
@@ -56,11 +51,18 @@ def load_database_with_words(engine, word_source_path=WORD_SOURCE_PATH):
         session.commit()
 
 
-engine = create_engine(WORD_DB_URL, echo=False, future=True)
-Base.metadata.create_all(engine)
+def setup_database():
+    if not os.path.exists(WORD_DB_PARENT_DIR):
+        os.makedirs(WORD_DB_PARENT_DIR)
 
-if not WORD_DB_EXISTS:
-    load_database_with_words(engine)
+    db_already_exists = os.path.exists(WORD_DB_PATH)
+    engine = create_engine(WORD_DB_URL, echo=False, future=True)
+    Base.metadata.create_all(engine)
+
+    if not db_already_exists:
+        load_database_with_words(engine)
+
+    return engine
 
 
 # TODO: Come up with a better name for this function
@@ -71,6 +73,7 @@ def filter_letters_not_used_in_correct_position(query, letter_column, letters):
 
 
 def query_database_for_words(
+    engine,
     first_letter,
     second_letter,
     third_letter,
@@ -179,7 +182,9 @@ def cli(
     not_fifth_letter,
     unused_letters,
 ):
+    engine = setup_database()
     for word in query_database_for_words(
+        engine=engine,
         first_letter=first_letter,
         second_letter=second_letter,
         third_letter=third_letter,
