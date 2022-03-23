@@ -2,7 +2,7 @@ import os
 from string import punctuation
 
 import click
-from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy import Column, String, and_, create_engine
 from sqlalchemy.orm import Session, declarative_base
 
 WORD_DB_PATH = os.path.abspath(
@@ -18,8 +18,7 @@ Base = declarative_base()
 
 class Word(Base):
     __tablename__ = "words"
-    id = Column(Integer, primary_key=True)
-    word = Column(String(5))
+    word = Column(String(5), primary_key=True)
     first_letter = Column(String(1))
     second_letter = Column(String(1))
     third_letter = Column(String(1))
@@ -65,13 +64,6 @@ def setup_database():
     return engine
 
 
-# TODO: Come up with a better name for this function
-def filter_letters_not_used_in_correct_position(query, letter_column, letters):
-    for letter in letters:
-        query = query.filter(letter_column != letter)
-    return query
-
-
 def query_database_for_words(
     engine,
     first_letter,
@@ -89,50 +81,18 @@ def query_database_for_words(
     with Session(engine) as session:
         query = session.query(Word)
 
-        if first_letter:
-            query = query.filter(Word.first_letter == first_letter)
-        elif not_first_letter:
-            query = filter_letters_not_used_in_correct_position(
-                query=query,
-                letter_column=Word.first_letter,
-                letters=not_first_letter,
-            )
-
-        if second_letter:
-            query = query.filter(Word.second_letter == second_letter)
-        elif not_second_letter:
-            query = filter_letters_not_used_in_correct_position(
-                query=query,
-                letter_column=Word.second_letter,
-                letters=not_second_letter,
-            )
-
-        if third_letter:
-            query = query.filter(Word.third_letter == third_letter)
-        elif not_third_letter:
-            query = filter_letters_not_used_in_correct_position(
-                query=query,
-                letter_column=Word.third_letter,
-                letters=not_third_letter,
-            )
-
-        if fourth_letter:
-            query = query.filter(Word.fourth_letter == fourth_letter)
-        elif not_fourth_letter:
-            query = filter_letters_not_used_in_correct_position(
-                query=query,
-                letter_column=Word.fourth_letter,
-                letters=not_fourth_letter,
-            )
-
-        if fifth_letter:
-            query = query.filter(Word.fifth_letter == fifth_letter)
-        elif not_fifth_letter:
-            query = filter_letters_not_used_in_correct_position(
-                query=query,
-                letter_column=Word.fifth_letter,
-                letters=not_fifth_letter,
-            )
+        columns_letter_and_not_letters = [
+            (Word.first_letter, first_letter, not_first_letter),
+            (Word.second_letter, second_letter, not_second_letter),
+            (Word.third_letter, third_letter, not_third_letter),
+            (Word.fourth_letter, fourth_letter, not_fourth_letter),
+            (Word.fifth_letter, fifth_letter, not_fifth_letter),
+        ]
+        for letter_column, letter, not_letters in columns_letter_and_not_letters:
+            if letter:
+                query = query.filter(letter_column == letter)
+            elif not_letters:
+                query = query.filter(and_(letter_column != l for l in not_letters))
 
         included_letters = "".join(
             letters
@@ -146,14 +106,12 @@ def query_database_for_words(
             if letters
         )
         if included_letters:
-            for included_letter in included_letters:
-                query = query.filter(Word.word.contains(included_letter))
+            query = query.filter(and_(Word.word.contains(l) for l in included_letters))
 
         if unused_letters:
-            for unused_letter in unused_letters:
-                query = query.filter(~Word.word.contains(unused_letter))
+            query = query.filter(and_(~Word.word.contains(ul) for ul in unused_letters))
 
-        for word in query:
+        for word in query.distinct():
             yield word.word
 
 
