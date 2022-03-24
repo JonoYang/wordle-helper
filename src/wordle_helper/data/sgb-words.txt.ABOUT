@@ -1,8 +1,6 @@
 about_resource: sgb-words.txt
 name: sgb-words.txt
-license_expression: mit
-copyright: Copyright (c) 2017 Charles Reid
-homepage_url: https://charlesreid1.com/wiki/Five_Letter_Words
-download_url: https://raw.githubusercontent.com/charlesreid1/five-letter-words/bd17061751dba58f6ab8a8b1e866d07283b8f8ec/sgb-words.txt
-vcs_url: git+https://github.com/charlesreid1/five-letter-words
+license_expression: public-domain
+homepage_url: https://www-cs-faculty.stanford.edu/~knuth/sgb.html
+download_url: https://www-cs-faculty.stanford.edu/~knuth/sgb-words.txt
 checksum_sha1: e6a00fa0c2c9cc1828e7602b27871cb25d900575
