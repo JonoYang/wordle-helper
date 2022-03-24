@@ -8,10 +8,8 @@ from sqlalchemy.orm import Session, declarative_base
 WORD_DB_PATH = os.path.abspath(
     os.path.expanduser("~/.cache/wordle_helper/words.sqlite")
 )
-WORD_DB_PARENT_DIR = os.path.dirname(WORD_DB_PATH)
-WORD_DB_URL = f"sqlite:///{WORD_DB_PATH}"
-CURRENT_PARENT_DIR = os.path.dirname(os.path.abspath(__file__))
-WORD_SOURCE_PATH = os.path.join(CURRENT_PARENT_DIR, "data/sgb-words.txt")
+_current_file_parent_dir = os.path.dirname(os.path.abspath(__file__))
+WORD_SOURCE_PATH = os.path.join(_current_file_parent_dir, "data/sgb-words.txt")
 
 Base = declarative_base()
 
@@ -50,12 +48,14 @@ def load_database_with_words(engine, word_source_path=WORD_SOURCE_PATH):
         session.commit()
 
 
-def setup_database():
-    if not os.path.exists(WORD_DB_PARENT_DIR):
-        os.makedirs(WORD_DB_PARENT_DIR)
+def setup_database(word_db_path=WORD_DB_PATH):
+    word_db_parent_dir = os.path.dirname(word_db_path)
+    if not os.path.exists(word_db_parent_dir):
+        os.makedirs(word_db_parent_dir)
 
-    db_already_exists = os.path.exists(WORD_DB_PATH)
-    engine = create_engine(WORD_DB_URL, echo=False, future=True)
+    db_already_exists = os.path.exists(word_db_path)
+    word_db_url = f"sqlite:///{word_db_path}"
+    engine = create_engine(word_db_url, echo=False, future=True)
     Base.metadata.create_all(engine)
 
     if not db_already_exists:
