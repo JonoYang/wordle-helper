@@ -2,7 +2,7 @@ import os
 from string import punctuation
 
 import click
-from sqlalchemy import Column, String, and_, create_engine
+from sqlalchemy import Column, Integer, String, and_, create_engine
 from sqlalchemy.orm import Session, declarative_base
 
 WORD_DB_PATH = os.path.abspath(
@@ -22,12 +22,13 @@ class Word(Base):
     third_letter = Column(String(1))
     fourth_letter = Column(String(1))
     fifth_letter = Column(String(1))
+    order = Column(Integer())
 
 
 def create_words_from_file(word_source_path=WORD_SOURCE_PATH):
     with open(word_source_path, "r") as f:
         words = f.read().splitlines()
-    for word in words:
+    for i, word in enumerate(words, start=1):
         if len(word) != 5 or any(c for c in word if c in punctuation):
             continue
         word = word.lower()
@@ -38,6 +39,7 @@ def create_words_from_file(word_source_path=WORD_SOURCE_PATH):
             third_letter=word[2],
             fourth_letter=word[3],
             fifth_letter=word[4],
+            order=i,
         )
 
 
@@ -111,7 +113,7 @@ def query_database_for_words(
         if unused_letters:
             query = query.filter(and_(~Word.word.contains(ul) for ul in unused_letters))
 
-        for word in query.distinct():
+        for word in query.distinct().order_by(Word.order.asc()):
             yield word.word
 
 
