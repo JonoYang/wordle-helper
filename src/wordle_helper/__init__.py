@@ -1,15 +1,12 @@
-import os
+from pathlib import Path
 from string import punctuation
 
 import click
 from sqlalchemy import Column, Integer, String, and_, create_engine
 from sqlalchemy.orm import Session, declarative_base
 
-WORD_DB_PATH = os.path.abspath(
-    os.path.expanduser("~/.cache/wordle_helper/words.sqlite")
-)
-_current_file_parent_dir = os.path.dirname(os.path.abspath(__file__))
-WORD_SOURCE_PATH = os.path.join(_current_file_parent_dir, "data/sgb-words.txt")
+WORD_DB_PATH = ":memory:"
+WORD_SOURCE_PATH = Path(__file__).parent / "data/sgb-words.txt"
 
 Base = declarative_base()
 
@@ -51,18 +48,10 @@ def load_database_with_words(engine, word_source_path=WORD_SOURCE_PATH):
 
 
 def setup_database(word_db_path=WORD_DB_PATH):
-    word_db_parent_dir = os.path.dirname(word_db_path)
-    if not os.path.exists(word_db_parent_dir):
-        os.makedirs(word_db_parent_dir)
-
-    db_already_exists = os.path.exists(word_db_path)
     word_db_url = f"sqlite:///{word_db_path}"
     engine = create_engine(word_db_url, echo=False, future=True)
     Base.metadata.create_all(engine)
-
-    if not db_already_exists:
-        load_database_with_words(engine)
-
+    load_database_with_words(engine)
     return engine
 
 
